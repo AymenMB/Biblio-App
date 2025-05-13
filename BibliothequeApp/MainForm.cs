@@ -27,8 +27,6 @@ namespace BibliothequeApp
         public MainForm()
         {
             InitializeComponent();
-
-   
             UpdateChartData();
         }
 
