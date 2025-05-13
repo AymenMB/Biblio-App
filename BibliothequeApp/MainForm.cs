@@ -91,11 +91,21 @@ namespace BibliothequeApp
                 dgvBooks.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "PublicationYear",
-                    HeaderText = "Ann�e",
+                    HeaderText = "Année",
                     DataPropertyName = "PublicationYear",
                     Width = 60,
                     DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
                 });
+                
+                dgvBooks.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "CopiesAvailable",
+                    HeaderText = "Exemplaires",
+                    DataPropertyName = "CopiesAvailable",
+                    Width = 80,
+                    DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
+                });
+                
                 dgvBooks.Columns.Add(new DataGridViewCheckBoxColumn { Name = "IsAvailable", HeaderText = "Disponible", DataPropertyName = "IsAvailable", Width = 80 });
             }
 
@@ -166,14 +176,14 @@ namespace BibliothequeApp
                 Title = txtBookTitle.Text.Trim(),
                 Author = txtBookAuthor.Text.Trim(),
                 ISBN = string.IsNullOrWhiteSpace(txtBookISBN.Text) ? null : txtBookISBN.Text.Trim(),
-                PublicationYear = year, // Stocke 0 si vide/invalide mais accepté
-                CopiesAvailable = (int)numCopiesAvailable.Value, // Utiliser la valeur du NumericUpDown
-                IsAvailable = true // Un nouveau livre est toujours disponible
+                PublicationYear = year,
+                CopiesAvailable = (int)numCopiesAvailable.Value,
+                IsAvailable = true
             };
 
             try
             {
-                // Vérifier si un livre très similaire existe déjà (optionnel)
+              
                 bool maybeExists = await _context.Books.AnyAsync(b => b.Title == newBook.Title && b.Author == newBook.Author);
                 if (maybeExists)
                 {
@@ -186,47 +196,47 @@ namespace BibliothequeApp
                 await _context.SaveChangesAsync();
                 MessageBox.Show("Livre ajouté avec succès !", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 ClearBookFields();
-                await LoadBooksAsync(); // Recharger la liste
-                await LoadBorrowComboBoxesAsync(); // Mettre à jour la liste des livres empruntables
-                UpdateDashboard();      // Mettre à jour le TdB
+                await LoadBooksAsync();
+                await LoadBorrowComboBoxesAsync();
+                UpdateDashboard();     
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Erreur lors de l'ajout du livre : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Pour débug: Console.WriteLine(ex.InnerException?.Message);
+               
             }
         }
 
-        // Bouton Mettre à Jour Livre
+     
         private async void btnUpdateBook_Click(object sender, EventArgs e)
         {
-            // Vérifier qu'une ligne est sélectionnée
+           
             if (dgvBooks.SelectedRows.Count == 0)
             {
                 MessageBox.Show("Veuillez sélectionner un livre à mettre à jour.", "Sélection requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Récupérer l'ID du livre sélectionné
+         
             int bookId = (int)dgvBooks.SelectedRows[0].Cells["Id"].Value;
 
-            // Récupérer le livre à mettre à jour depuis la base de données
+          
             var bookToUpdate = await _context.Books.FindAsync(bookId);
             if (bookToUpdate == null)
             {
                 MessageBox.Show("Livre non trouvé dans la base de données.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                await LoadBooksAsync(); // Recharger la liste des livres
+                await LoadBooksAsync();
                 return;
             }
 
-            // Vérifier que les champs obligatoires sont remplis
+           
             if (string.IsNullOrWhiteSpace(txtBookTitle.Text) || string.IsNullOrWhiteSpace(txtBookAuthor.Text))
             {
                 MessageBox.Show("Le titre et l'auteur sont requis.", "Erreur de validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Valider l'année (si fournie)
+        
             int year = 0;
             if (!string.IsNullOrWhiteSpace(txtBookYear.Text) && !int.TryParse(txtBookYear.Text, out year))
             {
@@ -234,14 +244,14 @@ namespace BibliothequeApp
                 return;
             }
 
-            // Validation stricte de l'année
+            
             if (year != 0 && (year < 1000 || year > DateTime.Now.Year + 1))
             {
                 MessageBox.Show("L'année de publication semble invalide.", "Erreur de validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Vérifier si l'ISBN est unique (s'il est modifié)
+       
             string isbn = string.IsNullOrWhiteSpace(txtBookISBN.Text) ? null : txtBookISBN.Text.Trim();
             if (isbn != null && isbn != bookToUpdate.ISBN)
             {
@@ -254,7 +264,7 @@ namespace BibliothequeApp
                 }
             }
 
-            // Confirmer la mise à jour
+           
             var confirmResult = MessageBox.Show($"Êtes-vous sûr de vouloir mettre à jour le livre '{bookToUpdate.Title}' ?",
                 "Confirmation de mise à jour", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -262,7 +272,7 @@ namespace BibliothequeApp
             {
                 try
                 {
-                    // Mettre à jour les propriétés du livre
+                 
                     bookToUpdate.Title = txtBookTitle.Text.Trim();
                     bookToUpdate.Author = txtBookAuthor.Text.Trim();
                     bookToUpdate.ISBN = isbn;
@@ -273,12 +283,12 @@ namespace BibliothequeApp
                     await _context.SaveChangesAsync();
                     MessageBox.Show("Livre mis à jour avec succès !", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    // Recharger les données
+                
                     await LoadBooksAsync();
-                    await LoadBorrowComboBoxesAsync(); // Mettre à jour la liste des livres empruntables
+                    await LoadBorrowComboBoxesAsync();
                     UpdateDashboard();
 
-                    // Sélectionner la ligne mise à jour dans le DataGridView
+                  
                     foreach (DataGridViewRow row in dgvBooks.Rows)
                     {
                         if ((int)row.Cells["Id"].Value == bookId)
@@ -296,35 +306,35 @@ namespace BibliothequeApp
             }
         }
 
-        // Bouton Supprimer Livre
+   
         private async void btnDeleteBook_Click(object sender, EventArgs e)
         {
             if (dgvBooks.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Veuillez s�lectionner un livre � supprimer.", "S�lection requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Veuillez sélectionner un livre a supprimer.", "Sélection requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            int bookId = (int)dgvBooks.SelectedRows[0].Cells["Id"].Value; // R�cup�re l'ID cach�
+            int bookId = (int)dgvBooks.SelectedRows[0].Cells["Id"].Value; 
 
             var bookToDelete = await _context.Books.FindAsync(bookId);
 
             if (bookToDelete == null)
             {
-                MessageBox.Show("Livre non trouv� (peut-�tre d�j� supprim�).", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                await LoadBooksAsync(); // Recharger pour �tre s�r
+                MessageBox.Show("Livre non trouve (peut-etre deja supprimé).", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                await LoadBooksAsync(); 
                 return;
             }
 
-            // V�rifier s'il est emprunt� ACTUELLEMENT
+          
             bool isCurrentlyBorrowed = await _context.Borrowings.AnyAsync(b => b.BookId == bookId && b.ReturnDate == null);
             if (isCurrentlyBorrowed)
             {
-                MessageBox.Show($"Le livre '{bookToDelete.Title}' est actuellement emprunt� et ne peut pas �tre supprim�.", "Op�ration impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show($"Le livre '{bookToDelete.Title}' est actuellement emprunté et ne peut pas étre supprimé.", "Opération impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var confirmResult = MessageBox.Show($"�tes-vous s�r de vouloir supprimer le livre '{bookToDelete.Title}' ?\nCeci supprimera aussi son historique d'emprunts.",
+            var confirmResult = MessageBox.Show($"étes-vous sur de vouloir supprimer le livre '{bookToDelete.Title}' ?\nCeci supprimera aussi son historique d'emprunts.",
                                                "Confirmation de suppression",
                                                MessageBoxButtons.YesNo,
                                                MessageBoxIcon.Question);
@@ -333,9 +343,7 @@ namespace BibliothequeApp
             {
                 try
                 {
-                    // Supprimer d'abord les enregistrements d'emprunts li�s (pass�s)
-                    // Note: Si la cl� �trang�re dans la BD a ON DELETE CASCADE, ce n'est pas strictement n�cessaire.
-                    // Mais le faire explicitement est plus s�r et ind�pendant de la config BD.
+             
                     var relatedBorrowings = _context.Borrowings.Where(b => b.BookId == bookId);
                     if (await relatedBorrowings.AnyAsync())
                     {
@@ -343,13 +351,13 @@ namespace BibliothequeApp
                     }
 
                     _context.Books.Remove(bookToDelete);
-                    await _context.SaveChangesAsync(); // Sauvegarde la suppression du livre et des emprunts li�s
+                    await _context.SaveChangesAsync(); 
 
                     MessageBox.Show("Livre supprim� avec succ�s !", "Succ�s", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    ClearBookFields(); // Effacer les champs car le livre s�lectionn� n'existe plus
-                    await LoadBooksAsync(); // Recharger la liste des livres
-                    await LoadBorrowComboBoxesAsync(); // Mettre � jour la liste des livres empruntables
-                    UpdateDashboard();      // Mettre � jour le TdB
+                    ClearBookFields();
+                    await LoadBooksAsync();
+                    await LoadBorrowComboBoxesAsync(); 
+                    UpdateDashboard();      
                 }
                 catch (DbUpdateException dbEx)
                 {
@@ -362,7 +370,7 @@ namespace BibliothequeApp
             }
         }
 
-        // Bouton Export Livres (CSV)
+        //  Export Livres (CSV)
         private async void btnExportBooks_Click(object sender, EventArgs e)
         {
             using (SaveFileDialog saveFileDialog = new SaveFileDialog())
@@ -378,19 +386,18 @@ namespace BibliothequeApp
                     {
                         var booksToExport = await _context.Books.AsNoTracking().OrderBy(b => b.Title).ToListAsync();
 
-                        // Utiliser UTF8 avec BOM pour meilleure compatibilit� Excel FR
-                        // Utiliser la culture fr-FR pour que les bool�ens soient VRAI/FAUX et le s�parateur ';'
+                     
                         var culture = CultureInfo.GetCultureInfo("fr-FR");
-                        var config = new CsvConfiguration(culture); // Appliquer la culture
+                        var config = new CsvConfiguration(culture);
 
-                        using (var writer = new StreamWriter(saveFileDialog.FileName, false, System.Text.Encoding.UTF8)) // UTF8 pour l'encodage
-                        using (var csv = new CsvWriter(writer, config)) // Utiliser la config avec culture FR
+                        using (var writer = new StreamWriter(saveFileDialog.FileName, false, System.Text.Encoding.UTF8)) 
+                        using (var csv = new CsvWriter(writer, config)) 
                         {
-                            writer.Write('\uFEFF'); // Write UTF-8 BOM
+                            writer.Write('\uFEFF'); 
                             await csv.WriteRecordsAsync(booksToExport);
                         }
 
-                        MessageBox.Show($"Liste des livres export�e avec succ�s vers:\n{saveFileDialog.FileName}", "Export Termin�", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Liste des livres exportée avec succés vers:\n{saveFileDialog.FileName}", "Export Termin�", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
@@ -401,20 +408,20 @@ namespace BibliothequeApp
             }
         }
 
-        // Gestionnaire d'événement pour remplir les champs quand un livre est sélectionné dans le DataGridView
+        
         private void dgvBooks_SelectionChanged(object sender, EventArgs e)
         {
-            // Vérifier qu'une ligne est sélectionnée et qu'elle contient des données
+      
             if (dgvBooks.SelectedRows.Count > 0 && !dgvBooks.SelectedRows[0].IsNewRow)
             {
                 DataGridViewRow row = dgvBooks.SelectedRows[0];
 
-                // Remplir les champs avec les données du livre sélectionné
+              
                 txtBookTitle.Text = row.Cells["Title"].Value?.ToString() ?? string.Empty;
                 txtBookAuthor.Text = row.Cells["Author"].Value?.ToString() ?? string.Empty;
                 txtBookISBN.Text = row.Cells["ISBN"].Value?.ToString() ?? string.Empty;
 
-                // Pour l'année, vérifier si c'est une valeur valide
+              
                 if (row.Cells["PublicationYear"].Value != null && row.Cells["PublicationYear"].Value != DBNull.Value)
                 {
                     int year = Convert.ToInt32(row.Cells["PublicationYear"].Value);
@@ -425,17 +432,16 @@ namespace BibliothequeApp
                     txtBookYear.Text = string.Empty;
                 }
 
-                // Pour le nombre d'exemplaires, vérifier si la colonne CopiesAvailable existe
-                // C'est une bonne pratique de vérifier car les colonnes peuvent changer
                 if (row.DataGridView.Columns.Contains("CopiesAvailable") &&
                     row.Cells["CopiesAvailable"].Value != null &&
                     row.Cells["CopiesAvailable"].Value != DBNull.Value)
                 {
-                    numCopiesAvailable.Value = Math.Max(1, Convert.ToInt32(row.Cells["CopiesAvailable"].Value));
+                    int copiesValue = Convert.ToInt32(row.Cells["CopiesAvailable"].Value);
+                    numCopiesAvailable.Value = copiesValue;
                 }
                 else
                 {
-                    numCopiesAvailable.Value = 1; // Valeur par défaut
+                    numCopiesAvailable.Value = 1; 
                 }
             }
         }
@@ -444,26 +450,26 @@ namespace BibliothequeApp
 
         #region Gestion Membres
 
-        // Charger les membres dans le DataGridView dgvMembers
+      
         private async Task LoadMembersAsync(string? searchTerm = null)
         {
             dgvMembers.DataSource = null;
 
             IQueryable<Member> query = _context.Members.AsNoTracking();
 
-            // Dans LoadMembersAsync:
+         
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                string likePattern = $"%{searchTerm}%"; // Crée le pattern pour SQL LIKE
+                string likePattern = $"%{searchTerm}%";
 
-                // Utilisez EF.Functions.Like
+            
                 query = query.Where(m => EF.Functions.Like(m.Name, likePattern) ||
                                          EF.Functions.Like(m.Email, likePattern));
             }
 
             var members = await query.OrderBy(m => m.Name).ToListAsync();
 
-            // Configurer colonnes si nécessaire
+           
             if (!dgvMembers.Columns.Contains("Id"))
             {
                 dgvMembers.Columns.Clear();
@@ -583,7 +589,7 @@ namespace BibliothequeApp
         {
             if (dgvMembers.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Veuillez s�lectionner un membre � supprimer.", "S�lection requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Veuillez sélectionner un membre a supprimer.", "Sélection requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -592,7 +598,7 @@ namespace BibliothequeApp
 
             if (memberToDelete == null)
             {
-                MessageBox.Show("Membre non trouv�.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Membre non trouvé.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 await LoadMembersAsync();
                 return;
             }
@@ -601,11 +607,11 @@ namespace BibliothequeApp
             bool hasActiveBorrowings = await _context.Borrowings.AnyAsync(b => b.MemberId == memberId && b.ReturnDate == null);
             if (hasActiveBorrowings)
             {
-                MessageBox.Show($"Le membre '{memberToDelete.Name}' a des livres actuellement emprunt�s et ne peut pas �tre supprim�.", "Op�ration impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show($"Le membre '{memberToDelete.Name}' a des livres actuellement empruntés et ne peut pas étre supprimé.", "Opération impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var confirmResult = MessageBox.Show($"�tes-vous s�r de vouloir supprimer le membre '{memberToDelete.Name}' ({memberToDelete.Email}) ?\nCeci supprimera aussi son historique d'emprunts.",
+            var confirmResult = MessageBox.Show($"étes-vous sur de vouloir supprimer le membre '{memberToDelete.Name}' ({memberToDelete.Email}) ?\nCeci supprimera aussi son historique d'emprunts.",
                                                "Confirmation de suppression",
                                                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -623,7 +629,7 @@ namespace BibliothequeApp
                     _context.Members.Remove(memberToDelete);
                     await _context.SaveChangesAsync();
 
-                    MessageBox.Show("Membre supprim� avec succ�s !", "Succ�s", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Membre supprimé avec succés !", "Succés", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     ClearMemberFields(); 
                     await LoadMembersAsync();
                     await LoadBorrowComboBoxesAsync();
@@ -658,7 +664,7 @@ namespace BibliothequeApp
                             writer.Write('\uFEFF'); 
                             await csv.WriteRecordsAsync(membersToExport);
                         }
-                        MessageBox.Show($"Liste des membres export�e avec succ�s vers:\n{saveFileDialog.FileName}", "Export Termin�", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Liste des membres exportée avec succés vers:\n{saveFileDialog.FileName}", "Export Terminé", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex) { MessageBox.Show($"Erreur lors de l'export des membres : {ex.Message}", "Erreur d'Export", MessageBoxButtons.OK, MessageBoxIcon.Error); }
                     finally { this.Cursor = Cursors.Default; }
@@ -698,11 +704,11 @@ namespace BibliothequeApp
                            
                             if (csv != null)
                             {
-                                errors.Add($"Donn�e invalide ligne {csv.Context.Parser.Row}: {args.RawRecord}");
+                                errors.Add($"Donnée invalide ligne {csv.Context.Parser.Row}: {args.RawRecord}");
                             }
                             else
                             {
-                                errors.Add($"Donn�e invalide (contexte lecteur non dispo): {args.RawRecord}");
+                                errors.Add($"Donnée invalide (contexte lecteur non dispo): {args.RawRecord}");
                             }
                         },
                         TrimOptions = TrimOptions.Trim,
@@ -736,7 +742,7 @@ namespace BibliothequeApp
                              
                                 if (record == null || string.IsNullOrWhiteSpace(record.Title) || string.IsNullOrWhiteSpace(record.Author))
                                 {
-                                    errors.Add($"Ligne {csv.Context.Parser.Row} saut�e (Titre/Auteur requis): {csv.Context.Parser.RawRecord}");
+                                    errors.Add($"Ligne {csv.Context.Parser.Row} sautée (Titre/Auteur requis): {csv.Context.Parser.RawRecord}");
                                     skippedCount++;
                                     continue;
                                 }
@@ -761,7 +767,7 @@ namespace BibliothequeApp
 
                                 if (exists)
                                 {
-                                    errors.Add($"Ligne {csv.Context.Parser.Row} saut�e (Doublon probable): {trimmedTitle}, {trimmedAuthor}, ISBN:{trimmedIsbn ?? "N/A"}");
+                                    errors.Add($"Ligne {csv.Context.Parser.Row} sautée (Doublon probable): {trimmedTitle}, {trimmedAuthor}, ISBN:{trimmedIsbn ?? "N/A"}");
                                     skippedCount++;
                                     continue;
                                 }
@@ -786,13 +792,13 @@ namespace BibliothequeApp
                             importedCount = booksToAdd.Count;
                         }
 
-                        string message = $"{importedCount} livre(s) import�(s).\n{skippedCount} ligne(s) saut�e(s) ou erron�e(s).";
+                        string message = $"{importedCount} livre(s) importé(s).\n{skippedCount} ligne(s) sautée(s) ou erronée(s).";
                         if (errors.Any())
                         {
-                            message += "\n\nPremiers d�tails:\n" + string.Join("\n", errors.Take(10));
+                            message += "\n\nPremiers détails:\n" + string.Join("\n", errors.Take(10));
                             if (errors.Count > 10) message += "\n...";
                         }
-                        MessageBox.Show(message, "Import Termin�", MessageBoxButtons.OK, skippedCount > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+                        MessageBox.Show(message, "Import Terminé", MessageBoxButtons.OK, skippedCount > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
 
                         await LoadBooksAsync();
                         await LoadBorrowComboBoxesAsync();
@@ -801,11 +807,11 @@ namespace BibliothequeApp
                     }
                     catch (HeaderValidationException hvex)
                     {
-                        MessageBox.Show($"Erreur d'en-t�te CSV : {hvex.Message}\nAssurez-vous que les colonnes existent (au moins Title, Author). Les noms doivent correspondre (insensible � la casse). V�rifiez le s�parateur (attendu: ';').", "Erreur Format CSV", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Erreur d'en-téte CSV : {hvex.Message}\nAssurez-vous que les colonnes existent (au moins Title, Author). Les noms doivent correspondre (insensible é la casse). Vérifiez le séparateur (attendu: ';').", "Erreur Format CSV", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Erreur lors de l'import : {ex.Message}\n{(ex.InnerException != null ? "D�tail: " + ex.InnerException.Message : "")}", "Erreur d'Import", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Erreur lors de l'import : {ex.Message}\n{(ex.InnerException != null ? "Détail: " + ex.InnerException.Message : "")}", "Erreur d'Import", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     finally { this.Cursor = Cursors.Default; }
                 }
@@ -840,11 +846,11 @@ namespace BibliothequeApp
                         {
                             if (csv != null)
                             {
-                                errors.Add($"Donn�e invalide ligne {csv.Context.Parser.Row}: {args.RawRecord}");
+                                errors.Add($"Donnée invalide ligne {csv.Context.Parser.Row}: {args.RawRecord}");
                             }
                             else
                             {
-                                errors.Add($"Donn�e invalide (contexte lecteur non dispo): {args.RawRecord}");
+                                errors.Add($"Donnée invalide (contexte lecteur non dispo): {args.RawRecord}");
                             }
                         },
                         TrimOptions = TrimOptions.Trim,
@@ -875,7 +881,7 @@ namespace BibliothequeApp
                               
                                 if (record == null || string.IsNullOrWhiteSpace(record.Name) || string.IsNullOrWhiteSpace(record.Email))
                                 {
-                                    errors.Add($"Ligne {csv.Context.Parser.Row} saut�e (Nom/Email requis): {csv.Context.Parser.RawRecord}");
+                                    errors.Add($"Ligne {csv.Context.Parser.Row} sautée (Nom/Email requis): {csv.Context.Parser.RawRecord}");
                                     skippedCount++;
                                     continue;
                                 }
@@ -884,7 +890,7 @@ namespace BibliothequeApp
                                 try { var _ = new MailAddress(emailToImport); }
                                 catch
                                 {
-                                    errors.Add($"Ligne {csv.Context.Parser.Row} saut�e (Email invalide): {record.Name}, {emailToImport}");
+                                    errors.Add($"Ligne {csv.Context.Parser.Row} sautée (Email invalide): {record.Name}, {emailToImport}");
                                     skippedCount++;
                                     continue;
                                 }
@@ -894,7 +900,7 @@ namespace BibliothequeApp
 
                                 if (exists)
                                 {
-                                    errors.Add($"Ligne {csv.Context.Parser.Row} saut�e (Email d�j� existant): {record.Name}, {emailToImport}");
+                                    errors.Add($"Ligne {csv.Context.Parser.Row} sautée (Email déja existant): {record.Name}, {emailToImport}");
                                     skippedCount++;
                                     continue;
                                 }
@@ -913,16 +919,16 @@ namespace BibliothequeApp
                             importedCount = membersToAdd.Count;
                         }
 
-                        string message = $"{importedCount} membre(s) import�(s).\n{skippedCount} ligne(s) saut�e(s) ou erron�e(s).";
-                        if (errors.Any()) { message += "\n\nPremiers d�tails:\n" + string.Join("\n", errors.Take(10)); if (errors.Count > 10) message += "\n..."; }
-                        MessageBox.Show(message, "Import Termin�", MessageBoxButtons.OK, skippedCount > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+                        string message = $"{importedCount} membre(s) importé(s).\n{skippedCount} ligne(s) sautée(s) ou erronée(s).";
+                        if (errors.Any()) { message += "\n\nPremiers détails:\n" + string.Join("\n", errors.Take(10)); if (errors.Count > 10) message += "\n..."; }
+                        MessageBox.Show(message, "Import Terminé", MessageBoxButtons.OK, skippedCount > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
 
                         await LoadMembersAsync();
                         await LoadBorrowComboBoxesAsync();
                         UpdateDashboard();
                     }
-                    catch (HeaderValidationException hvex) { MessageBox.Show($"Erreur d'en-t�te CSV : {hvex.Message}\nColonnes attendues: Name, Email, [RegistrationDate], [SubscriptionEndDate]. V�rifiez s�parateur (';' attendu).", "Erreur Format CSV", MessageBoxButtons.OK, MessageBoxIcon.Error); }
-                    catch (Exception ex) { MessageBox.Show($"Erreur lors de l'import membres : {ex.Message}\n{(ex.InnerException != null ? "D�tail: " + ex.InnerException.Message : "")}", "Erreur d'Import", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                    catch (HeaderValidationException hvex) { MessageBox.Show($"Erreur d'en-téte CSV : {hvex.Message}\nColonnes attendues: Name, Email, [RegistrationDate], [SubscriptionEndDate]. Varifiez saparateur (';' attendu).", "Erreur Format CSV", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                    catch (Exception ex) { MessageBox.Show($"Erreur lors de l'import membres : {ex.Message}\n{(ex.InnerException != null ? "Datail: " + ex.InnerException.Message : "")}", "Erreur d'Import", MessageBoxButtons.OK, MessageBoxIcon.Error); }
                     finally { this.Cursor = Cursors.Default; }
                 }
             }
@@ -1093,8 +1099,8 @@ namespace BibliothequeApp
                                             .Select(b => new 
                                             {
                                                 b.Id,
-                                                MemberName = b.Member != null ? b.Member.Name : "Membre Supprim�",
-                                                BookTitle = b.Book != null ? b.Book.Title : "Livre Supprim�",
+                                                MemberName = b.Member != null ? b.Member.Name : "Membre Supprima",
+                                                BookTitle = b.Book != null ? b.Book.Title : "Livre Supprima",
                                                 BorrowDate = b.BorrowDate,
                                                 DueDate = b.DueDate,
                                                 IsOverdue = b.DueDate.Date < DateTime.Now.Date 
@@ -1114,7 +1120,7 @@ namespace BibliothequeApp
                 dgvBorrowings.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "BorrowDate",
-                    HeaderText = "Emprunt� le",
+                    HeaderText = "Emprunté le",
                     DataPropertyName = "BorrowDate",
                     Width = 100,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "d" }
@@ -1123,7 +1129,7 @@ namespace BibliothequeApp
                 dgvBorrowings.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "DueDate",
-                    HeaderText = "Retour Pr�vu",
+                    HeaderText = "Retour Prévu",
                     DataPropertyName = "DueDate",
                     Width = 100,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "d" }
@@ -1163,7 +1169,16 @@ namespace BibliothequeApp
             int bookId = (int)cmbBorrowBook.SelectedValue;
             DateTime dueDate = dtpDueDate.Value.Date; 
 
-        
+            // Vérification de l'abonnement expiré
+            var member = await _context.Members.FindAsync(memberId);
+            if (member != null && member.SubscriptionEndDate.HasValue && member.SubscriptionEndDate.Value.Date < DateTime.Now.Date)
+            {
+                MessageBox.Show($"Impossible d'emprunter: L'abonnement de {member.Name} est expiré depuis le {member.SubscriptionEndDate.Value.ToShortDateString()}.", 
+                                "Abonnement expiré", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+         
             if (dueDate < DateTime.Now.Date)
             {
                 MessageBox.Show("La date de retour prévue ne peut pas être dans le passé.", "Date invalide", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1349,7 +1364,7 @@ namespace BibliothequeApp
             catch (InvalidOperationException invOpEx) when (invOpEx.Message.Contains("disposed")) {  }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erreur mise � jour TdB: {ex.Message}"); 
+                Console.WriteLine($"Erreur mise a jour TdB: {ex.Message}"); 
             }
         }
 
@@ -1363,7 +1378,7 @@ namespace BibliothequeApp
 
            
       
-            string[] months = new string[] { "Décembre", "Janvier", "Février", "Mars", "Avril", "Mai" };
+            string[] months = new string[] { "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre" };
 
             Random rand = new Random();
 
@@ -1399,13 +1414,13 @@ namespace BibliothequeApp
             string smtpUser = "projetds4@gmail.com"; 
             string smtpPass = "heynzvforbpysohs";         
             string fromEmail = smtpUser;                 
-            string fromName = "Biblioth�que Municipale XYZ"; 
+            string fromName = "Bibliothéque Municipale XYZ"; 
                                                              // --- Fin Configuration ---
 
           
             if (smtpUser.Contains("votre.adresse") || smtpPass.Contains("xxxxxxxx"))
             {
-                MessageBox.Show("Veuillez configurer les param�tres SMTP dans le code (btnSendOverdueAlerts_Click) avant d'envoyer des emails.", "Configuration Requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Veuillez configurer les paramétres SMTP dans le code (btnSendOverdueAlerts_Click) avant d'envoyer des emails.", "Configuration Requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -1427,7 +1442,7 @@ namespace BibliothequeApp
 
                 if (!overdueBorrowings.Any())
                 {
-                    MessageBox.Show("Aucun emprunt en retard � signaler.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Aucun emprunt en retard a signaler.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
@@ -1446,7 +1461,7 @@ namespace BibliothequeApp
                     if (string.IsNullOrWhiteSpace(borrowing.Member?.Email) || borrowing.Book == null)
                     {
                         errors++;
-                        errorDetails.Add($"Emprunt ID {borrowing.Id}: Donn�es membre/livre ou email manquantes.");
+                        errorDetails.Add($"Emprunt ID {borrowing.Id}: Données membre/livre ou email manquantes.");
                         continue;
                     }
 
@@ -1457,15 +1472,15 @@ namespace BibliothequeApp
 
                     string subject = $"Rappel: Retour de livre en retard - {bookTitle}";
                     string body = $@"
-Cher(�re) {memberName},
+Cher(ére) {memberName},
 
-Nous vous rappelons que le livre ""{bookTitle}"", emprunt� le {borrowing.BorrowDate:dd/MM/yyyy}, devait �tre retourn� le {borrowing.DueDate:dd/MM/yyyy}.
+Nous vous rappelons que le livre ""{bookTitle}"", emprunté le {borrowing.BorrowDate:dd/MM/yyyy}, devait étre retourné le {borrowing.DueDate:dd/MM/yyyy}.
 Il est maintenant en retard de {overdueDays.Days} jour(s).
 
-Merci de bien vouloir le rapporter � la biblioth�que d�s que possible.
+Merci de bien vouloir le rapporter a la bibliothéque dés que possible.
 
 Cordialement,
-L'�quipe de la {fromName}";
+L'équipe de la {fromName}";
 
                    
                     using MailMessage mailMessage = new MailMessage()
@@ -1493,7 +1508,7 @@ L'�quipe de la {fromName}";
                             smtpEx.Message.Contains("5.7.8") || 
                             smtpEx.Message.Contains("5.5.1"))   
                         {
-                            MessageBox.Show($"Erreur SMTP critique ({smtpEx.StatusCode}) pour {toEmail}. V�rifiez la configuration SMTP et l'adresse.\nMessage: {smtpEx.Message}\nL'envoi des autres emails est interrompu.", "Erreur Email Critique", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show($"Erreur SMTP critique ({smtpEx.StatusCode}) pour {toEmail}. Vérifiez la configuration SMTP et l'adresse.\nMessage: {smtpEx.Message}\nL'envoi des autres emails est interrompu.", "Erreur Email Critique", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             goto EndSendProcess; 
                         }
                     }
@@ -1508,7 +1523,7 @@ L'�quipe de la {fromName}";
             catch (Exception ex) 
             {
                 errors++;
-                errorDetails.Add($"Erreur g�n�rale avant envoi: {ex.Message}");
+                errorDetails.Add($"Erreur générale avant envoi: {ex.Message}");
             }
 
         EndSendProcess: 
@@ -1517,14 +1532,14 @@ L'�quipe de la {fromName}";
             btnSendOverdueAlerts.Enabled = true; 
 
            
-            string summary = $"{emailsSent} alerte(s) envoy�e(s).\n{errors} erreur(s) rencontr�e(s).";
+            string summary = $"{emailsSent} alerte(s) envoyée(s).\n{errors} erreur(s) rencontrée(s).";
             if (errorDetails.Any())
             {
-                summary += "\n\nD�tails des premi�res erreurs:\n" + string.Join("\n", errorDetails.Take(5));
+                summary += "\n\nDétails des premiéres erreurs:\n" + string.Join("\n", errorDetails.Take(5));
                 if (errorDetails.Count > 5) summary += "\n...";
                 
             }
-            MessageBox.Show(summary, "R�sultat Envoi Alertes", MessageBoxButtons.OK, errors > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            MessageBox.Show(summary, "Résultat Envoi Alertes", MessageBoxButtons.OK, errors > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
         }
 
 
@@ -1553,6 +1568,11 @@ L'�quipe de la {fromName}";
         private void dgvBooks_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
+        }
+
+        private void lblSubscriptionEnd_Click(object sender, EventArgs e)
+        {
+           
         }
     }
 }
