@@ -1,6 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema; // Pour [ForeignKey]
+using System.ComponentModel.DataAnnotations.Schema; 
 
 namespace BibliothequeApp.Models
 {
@@ -10,20 +10,20 @@ namespace BibliothequeApp.Models
         public int Id { get; set; }
 
         [Required]
-        public int BookId { get; set; } // Clé étrangère vers Book
+        public int BookId { get; set; }
 
         [Required]
-        public int MemberId { get; set; } // Clé étrangère vers Member
+        public int MemberId { get; set; } 
 
         [Required]
         public DateTime BorrowDate { get; set; } = DateTime.Now;
 
         [Required]
-        public DateTime DueDate { get; set; } // Date de retour prévue
+        public DateTime DueDate { get; set; } 
 
-        public DateTime? ReturnDate { get; set; } // Date de retour réelle (nullable)
+        public DateTime? ReturnDate { get; set; } 
 
-        // Propriétés de navigation (pour accéder facilement au livre et au membre liés)
+     
         [ForeignKey("BookId")]
         public virtual Book? Book { get; set; }
 

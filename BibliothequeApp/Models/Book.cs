@@ -1,14 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations; // Nécessaire pour [Key]
-using System.ComponentModel.DataAnnotations.Schema; // Nécessaire pour [NotMapped]
+﻿using System.ComponentModel.DataAnnotations; 
+using System.ComponentModel.DataAnnotations.Schema; 
 
 namespace BibliothequeApp.Models
 {
     public class Book
     {
-        [Key] // Indique que Id est la clé primaire
+        [Key] 
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Le titre est requis")] // Validation simple
+        [Required(ErrorMessage = "Le titre est requis")]
         [MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
@@ -16,20 +16,20 @@ namespace BibliothequeApp.Models
         [MaxLength(150)]
         public string Author { get; set; } = string.Empty;
 
-        public string? ISBN { get; set; } // Nullable string
+        public string? ISBN { get; set; } 
 
         public int PublicationYear { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Le nombre d'exemplaires doit être positif ou zéro")]
-        public int CopiesAvailable { get; set; } = 1; // Par défaut un seul exemplaire disponible
+        public int CopiesAvailable { get; set; } = 1; 
 
-        public bool IsAvailable { get; set; } = true; // Sera calculé en fonction de CopiesAvailable
+        public bool IsAvailable { get; set; } = true; 
 
-        // Propriété de navigation pour les emprunts (relation un-à-plusieurs)
+    
         public virtual ICollection<Borrowing>? Borrowings { get; set; }
         
-        // Propriété calculée pour compatibilité arrière
-        [NotMapped] // Ne pas stocker cette propriété dans la base de données
+        
+        [NotMapped]
         public bool IsActuallyAvailable => CopiesAvailable > 0;
     }
 }

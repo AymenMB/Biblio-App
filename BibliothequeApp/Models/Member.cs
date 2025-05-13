@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic; // Pour ICollection
+using System.Collections.Generic; 
 
 namespace BibliothequeApp.Models
 {
@@ -19,10 +19,10 @@ namespace BibliothequeApp.Models
 
         public DateTime RegistrationDate { get; set; } = DateTime.Now;
 
-        // Abonnement ? On pourrait ajouter une date de fin d'abonnement, un type, etc.
-        public DateTime? SubscriptionEndDate { get; set; } // Nullable DateTime
+      
+        public DateTime? SubscriptionEndDate { get; set; }
 
-        // Propriété de navigation pour les emprunts
+       
         public virtual ICollection<Borrowing>? Borrowings { get; set; }
     }
 }
